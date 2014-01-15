@@ -35,8 +35,13 @@ function install_contrail() {
 	sudo yum -y install gcc-c++ python-devel autoconf automake libtool
 	sudo yum -y install libevent libevent-devel libxml2-devel libxslt-devel
 	sudo yum -y install tunctl
-	sudo yum -y install redis
 	sudo yum -y install java-1.7.0-openjdk
+
+        if ! which redis-server > /dev/null 2>&1 ; then
+            wget http://mir01.syntis.net/atomic/fedora/17/x86_64/RPMS/redis-2.6.13-3.fc17.art.x86_64.rpm
+            sudo yum -y install redis-2.6.13-3.fc17.art.x86_64.rpm
+            rm -rf redis-2.6.13-3.fc17.art.x86_64.rpm
+        fi
     fi
 
     # api server requirements
@@ -104,13 +109,13 @@ function install_contrail() {
 	    # don't start cassandra at boot.  I'll screen_it later
 	    sudo service cassandra stop
 	    sudo update-rc.d -f cassandra remove
-	elif [ ! -d $CONTRAIL_SRC/third_party/apache-cassandra-2.0.2-bin ]; then
-        contrail_cwd=$(pwd)
-        cd $CONTRAIL_SRC/third_party
-        wget http://repo1.maven.org/maven2/org/apache/cassandra/apache-cassandra/2.0.2/apache-cassandra-2.0.2-bin.tar.gz
-        tar xvzf apache-cassandra-2.0.2-bin.tar.gz
-        cd ${contrail_cwd}
-    fi
+	else
+            contrail_cwd=$(pwd)
+            cd $CONTRAIL_SRC/third_party
+            wget http://rpm.datastax.com/community/noarch/cassandra12-1.2.11-1.noarch.rpm
+            sudo yum -y install ./cassandra12-1.2.11-1.noarch.rpm
+            cd ${contrail_cwd}
+        fi
     fi
 	    
     # get ifmap 
@@ -291,17 +296,15 @@ function start_contrail() {
 
     if is_ubuntu; then
         REDIS_CONF="/etc/redis/redis.conf"
-        CASS_PATH="/usr/sbin/cassandra"
     else
         REDIS_CONF="/etc/redis.conf"
-        CASS_PATH="$CONTRAIL_SRC/third_party/apache-cassandra-2.0.2/bin/cassandra"
     fi
 
     # launch ...
     redis-cli flushall
     screen_it redis "sudo redis-server $REDIS_CONF"
 
-    screen_it cass "sudo $CASS_PATH -f"
+    screen_it cass "sudo cassandra -f"
 
     screen_it zk  "cd $CONTRAIL_SRC/third_party/zookeeper-3.4.5; ./bin/zkServer.sh start"
 
@@ -324,7 +327,31 @@ function start_contrail() {
     screen_it svc-mon "python $(pywhere svc_monitor)/svc_monitor.py --reset_config --conf_file /etc/contrail/svc_monitor.conf"
 
     source /etc/contrail/control_param
-    screen_it control "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/control-node/control-node --map-server-url https://${IFMAP_SERVER}:${IFMAP_PORT} --map-user ${IFMAP_USER} --map-password ${IFMAP_PASWD} --hostname ${HOSTNAME} --host-ip ${HOSTIP} --bgp-port ${BGP_PORT} ${CERT_OPTS} ${LOG_LOCAL}"
+    screen_it control "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/control-node/control-node --map-server-url https://${IFMAP_SERVER}:${IFMAP_PORT} --map-user ${IFMAP_USER} --map-password ${IFMAP_PASWD} --hostname ${HOSTNAME} --host-ip ${HOSTIP} --bgp-port ${BGP_PORT} ${CERT_OPTS} ${LOG_LOCAL} --collector ${COLLECTOR}"
+
+    # collector services
+    # redis-uve
+    screen_it redis-u "sudo redis-server /etc/contrail/redis-uve.conf"
+    sleep 2
+    # redis-query
+    screen_it redis-q "sudo redis-server /etc/contrail/redis-query.conf"
+    sleep 2
+    # redis-sentinel
+    screen_it redis-s "sudo redis-server /etc/contrail/sentinel.conf --sentinel"
+    sleep 2
+
+    # collector/vizd
+    source /etc/contrail/vizd_param
+    screen_it vizd "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/analytics/vizd --cassandra-server-list ${CASSANDRA_SERVER_LIST} --host-ip ${HOST_IP} ${LOG_FILE} ${LOG_LOCAL}"
+    sleep 2
+
+    source /etc/contrail/opserver_param
+    screen_it opserver "python  $(pywhere opserver)/opserver.py --collectors ${COLLECTORS} --host_ip ${HOST_IP} ${LOG_FILE} ${LOG_LOCAL}"
+    sleep 2
+
+    source /etc/contrail/qed_param
+    screen_it qed "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/query_engine/qed --collectors ${COLLECTORS} --cassandra-server-list ${CASSANDRA_SERVER_LIST} --redis-ip ${REDIS_SERVER} --redis-port ${REDIS_SERVER_PORT} ${LOG_FILE} ${LOG_LOCAL}"
+    sleep 2
 
     # Provision Vrouter - must be run after API server and schema transformer are up
     sleep 2
@@ -365,7 +392,7 @@ EOF2
     cat > $TOP_DIR/bin/vnsw.hlpr <<END
 #! /bin/bash
 PATH=$TOP_DIR/bin:$PATH
-LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/vnsw/agent/vnswad --config-file $CONFIG $VROUTER_LOGFILE
+LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/vnsw/agent/vnswad --config-file $CONFIG $VROUTER_LOGFILE --collector ${COLLECTOR}
 END
     chmod a+x $TOP_DIR/bin/vnsw.hlpr
     screen_it agent "sudo $TOP_DIR/bin/vnsw.hlpr"
@@ -405,6 +432,7 @@ function stop_contrail() {
             screen -X -S $SESSION quit
         fi
     fi
+    sudo pkill redis-server
     cmd=$(lsmod | grep vrouter)
     if [ $? == 0 ]; then
         cmd=$(sudo rmmod vrouter)

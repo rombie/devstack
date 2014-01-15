@@ -169,6 +169,7 @@ class Setup(object):
         # dsetia
         self._args.openstack_ip = self._args.cfgm_ip
         self._args.collector_ip = self._args.cfgm_ip
+        self._args.collector_ip_list = [self._args.cfgm_ip]
         self._args.discovery_ip = self._args.cfgm_ip
         self._args.control_ip = self._args.cfgm_ip
         self._args.compute_ip = self.get_management_ip(self._args.physical_interface)
@@ -448,6 +449,9 @@ HWADDR=%s
         self.run_shell("sudo chkconfig iptables off")
         self.run_shell("sudo iptables --flush")
 
+        cassandra_server_list = [(cassandra_server_ip, '9160') for cassandra_server_ip in self._args.cassandra_ip_list]
+        collector_server_list = [(collector_ip, '8086') for collector_ip in self._args.collector_ip_list]
+
         if 'config' in self._args.role or 'compute' in self._args.role or 'openstack' in self._args.role:
             openstack_ip = self._args.openstack_ip
             compute_ip = self._args.compute_ip
@@ -468,10 +472,71 @@ HWADDR=%s
         # database (cassandra setup in contrail.sh)
 
         # collector in Phase 2
+        if 'collector' in self._args.role:
+            self.run_shell("wget http://download.redis.io/releases/redis-2.6.14.tar.gz")
+            self.run_shell("tar xvzf redis-2.6.14.tar.gz redis-2.6.14/sentinel.conf")
+            self.run_shell("cp redis-2.6.14/sentinel.conf /opt/stack/sentinel.conf")
+            self.run_shell("rm -rf redis-2.6.14 redis-2.6.14.tar.gz")
+            REDIS_SENTINEL_BASE="/opt/stack/sentinel.conf"
+            REDIS_UVE="/etc/contrail/redis-uve.conf"
+            REDIS_QUERY="/etc/contrail/redis-query.conf"
+            REDIS_SENTINEL="/etc/contrail/sentinel.conf"
+            if os.path.isfile('/etc/redis/redis.conf'):
+                REDIS_CONF="/etc/redis/redis.conf"
+            else:
+                REDIS_CONF="/etc/redis.conf"
+            self.run_shell("cp %s %s" %(REDIS_CONF, REDIS_UVE))
+            self.run_shell("cp %s %s" %(REDIS_CONF, REDIS_QUERY))
+            self.run_shell("cp %s %s" %(REDIS_SENTINEL_BASE, REDIS_SENTINEL))
+
+            self.replace_in_file(REDIS_UVE, 'pidfile /var/run/redis/redis.pid', 'pidfile /var/run/redis/redis-uve.pid')
+            self.replace_in_file(REDIS_UVE, 'port 6379', 'port 6381')
+            self.replace_in_file(REDIS_UVE, 'bind 127.0.0.1', '#bind 127.0.0.1')
+            self.replace_in_file(REDIS_UVE, 'logfile /var/log/redis/redis.log', 'logfile /var/log/redis/redis-uve.log')
+            self.replace_in_file(REDIS_UVE, 'dbfilename dump.rdb', 'dbfilename dump-uve.rdb')
+
+            self.replace_in_file(REDIS_QUERY, 'pidfile /var/run/redis/redis.pid', 'pidfile /var/run/redis/redis-query.pid')
+            self.replace_in_file(REDIS_QUERY, 'port 6379', 'port 6380')
+            self.replace_in_file(REDIS_QUERY, 'bind 127.0.0.1', '#bind 127.0.0.1')
+            self.replace_in_file(REDIS_QUERY, 'logfile /var/log/redis/redis.log', 'logfile /var/log/redis/redis-query.log')
+            self.replace_in_file(REDIS_QUERY, 'dbfilename dump.rdb', 'dbfilename dump-query.rdb')
+
+            self.replace_in_file(REDIS_SENTINEL, 'sentinel monitor mymaster 127.0.0.1 6379 2', 'sentinel monitor mymaster '+collector_ip+' 6381 1')
+
+            template_vals = {'__contrail_discovery_ip__': self._args.discovery_ip,
+                             '__contrail_host_ip__': self._args.collector_ip,
+                             '__contrail_cassandra_server_list__' : ' '.join('%s:%s' % cassandra_server for cassandra_server in cassandra_server_list),
+                             '__contrail_log_local__': '--log-local',
+                             '__contrail_log_file__': '--log-file=/var/log/contrail/collector.log',
+                            }
+            self._template_substitute_write(vizd_param_template,
+                                            template_vals, temp_dir_name + '/vizd_param')
+            self.run_shell("sudo mv %s/vizd_param /etc/contrail/vizd_param" %(temp_dir_name))
+
+            template_vals = {'__contrail_discovery_ip__': self._args.discovery_ip,
+                             '__contrail_cassandra_server_list__' : ' '.join('%s:%s' % cassandra_server for cassandra_server in cassandra_server_list),
+                             '__contrail_log_local__': '--log-local',
+                             '__contrail_log_file__': '--log-file=/var/log/contrail/qe.log',
+                             '__contrail_collectors__' : ' '.join('%s:%s' % collector_server for collector_server in collector_server_list),
+                             '__contrail_redis_server__' : collector_ip,
+                             '__contrail_redis_server_port__' : 6380,
+                            }
+            self._template_substitute_write(qe_param_template,
+                                            template_vals, temp_dir_name + '/qed_param')
+            self.run_shell("sudo mv %s/qed_param /etc/contrail/qed_param" %(temp_dir_name))
+                    
+            template_vals = {'__contrail_discovery_ip__': self._args.discovery_ip,
+                             '__contrail_host_ip__': self._args.collector_ip,
+                             '__contrail_log_local__': '--log_local',
+                             '__contrail_log_file__': '--log_file=/var/log/contrail/opserver.log',
+                             '__contrail_collectors__' : ' '.join('%s:%s' % collector_server for collector_server in collector_server_list),
+                            }
+            self._template_substitute_write(opserver_param_template,
+                                            template_vals, temp_dir_name + '/opserver_param')
+            self.run_shell("sudo mv %s/opserver_param /etc/contrail/opserver_param" %(temp_dir_name))
                     
         if 'config' in self._args.role:
             openstack_ip = self._args.openstack_ip
-            cassandra_server_list = [(cassandra_server_ip, '9160') for cassandra_server_ip in self._args.cassandra_ip_list]
             template_vals = {'__contrail_ifmap_server_ip__': cfgm_ip,
                              '__contrail_ifmap_server_port__': '8444' if use_certs else '8443',
                              '__contrail_ifmap_username__': 'api-server',
@@ -492,6 +557,7 @@ HWADDR=%s
                              '__contrail_cassandra_server_list__' : ' '.join('%s:%s' % cassandra_server for cassandra_server in cassandra_server_list),
                              '__contrail_disc_server_ip__': self._args.discovery_ip or '',
                              '__contrail_disc_server_port__': '5998',
+                             '__contrail_collectors__' : ' '.join('%s:%s' % collector_server for collector_server in collector_server_list),
                             }
             self._template_substitute_write(api_server_conf_template,
                                             template_vals, temp_dir_name + '/api_server.conf')
@@ -529,6 +595,7 @@ HWADDR=%s
                              '__contrail_cassandra_server_list__' : ' '.join('%s:%s' % cassandra_server for cassandra_server in cassandra_server_list),
                              '__contrail_disc_server_ip__': self._args.discovery_ip or '',
                              '__contrail_disc_server_port__': '5998',
+                             '__contrail_collectors__' : ' '.join('%s:%s' % collector_server for collector_server in collector_server_list),
                             }
             self._template_substitute_write(schema_transformer_conf_template,
                                             template_vals, temp_dir_name + '/schema_transformer.conf')
@@ -554,6 +621,7 @@ HWADDR=%s
                              '__contrail_cassandra_server_list__' : ' '.join('%s:%s' % cassandra_server for cassandra_server in cassandra_server_list),
                              '__contrail_disc_server_ip__': self._args.discovery_ip or '',
                              '__contrail_disc_server_port__': '5998',
+                             '__contrail_collectors__' : ' '.join('%s:%s' % collector_server for collector_server in collector_server_list),
                             }
             self._template_substitute_write(svc_monitor_conf_template,
                                             template_vals, temp_dir_name + '/svc_monitor.conf')
