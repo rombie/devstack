@@ -28,7 +28,15 @@ function install_contrail() {
 	apt_get install python-dev autoconf automake build-essential libtool
 	apt_get install libevent-dev libxml2-dev libxslt-dev
 	apt_get install uml-utilities
-	apt_get install redis-server
+
+        if ! which redis-server > /dev/null 2>&1 ; then
+            sudo apt-get install libjemalloc1
+            wget http://us.archive.ubuntu.com/ubuntu/pool/universe/r/redis/redis-server_2.6.13-1_amd64.deb
+            sudo dpkg -i redis-server_2.6.13-1_amd64.deb
+            rm -rf redis-server_2.6.13-1_amd64.deb
+            # service will be started later
+            sudo service redis-server stop
+        fi
     else
 	sudo yum -y install patch scons flex bison make vim
 	sudo yum -y install expat-devel gettext-devel curl-devel
