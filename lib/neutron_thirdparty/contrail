@@ -24,11 +24,16 @@ function install_contrail() {
 
     # dependencies
     if is_ubuntu; then
-	apt_get install patch scons flex bison make vim
+	apt_get install patch scons flex bison make vim chkconfig
 	apt_get install libexpat-dev libgettextpo0 libcurl4-openssl-dev
 	apt_get install python-dev autoconf automake build-essential libtool
 	apt_get install libevent-dev libxml2-dev libxslt-dev
 	apt_get install uml-utilities
+
+	# last version of redis
+	sudo add-apt-repository -y ppa:rwky/redis
+	apt_get update
+
 	apt_get install redis-server
     else
 	sudo yum -y install patch scons flex bison make vim
@@ -48,10 +53,11 @@ function install_contrail() {
     sudo pip install netifaces fabric argparse
     sudo pip install stevedore xmltodict python-keystoneclient
     sudo pip install kazoo pyinotify
+    sudo pip install bottle
 
     CONTRAIL_REPO_PROTO=${CONTRAIL_REPO_PROTO:-ssh}
     CONTRAIL_SRC=${CONTRAIL_SRC:-/opt/stack/contrail}
-    mkdir -p $CONTRAIL_SRC
+    mkdir -p $CONTRAIL_SRC/third_party
     contrail_cwd=$(pwd)
     cd $CONTRAIL_SRC
     if [ ! -d $CONTRAIL_SRC/.repo ]; then
