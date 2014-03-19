@@ -140,12 +140,12 @@ function install_contrail() {
         cd ${contrail_cwd}
     fi
 
-    if [ ! -d $CONTRAIL_SRC/third_party/zookeeper-3.4.5 ]; then
+    if [ ! -d $CONTRAIL_SRC/third_party/zookeeper-3.4.6 ]; then
         contrail_cwd=$(pwd)
         cd $CONTRAIL_SRC/third_party
-        wget -N http://apache.mirrors.hoobly.com/zookeeper/stable/zookeeper-3.4.5.tar.gz
-        tar xvzf zookeeper-3.4.5.tar.gz
-        cd zookeeper-3.4.5
+        wget -N http://apache.mirrors.hoobly.com/zookeeper/stable/zookeeper-3.4.6.tar.gz
+        tar xvzf zookeeper-3.4.6.tar.gz
+        cd zookeeper-3.4.6
         cp conf/zoo_sample.cfg conf/zoo.cfg
         cd ${contrail_cwd}
     fi
