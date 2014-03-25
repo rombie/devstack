@@ -7,6 +7,7 @@ ifmap_server_port=$__contrail_ifmap_server_port__
 ifmap_username=$__contrail_ifmap_username__
 ifmap_password=$__contrail_ifmap_password__
 redis_server_port=6379
+redis_server_ip=$__contrail_redis_server_ip__
 cassandra_server_list=$__contrail_cassandra_server_list__
 listen_ip_addr=$__contrail_listen_ip_addr__
 listen_port=$__contrail_listen_port__
@@ -29,6 +30,7 @@ auth_port=35357
 admin_user=$__contrail_admin_user__
 admin_password=$__contrail_admin_password__
 admin_tenant_name=$__contrail_admin_tenant_name__
+admin_token = $__contrail_admin_token__
 $__contrail_memcached_opt__
 """)
 
