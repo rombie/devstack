@@ -18,7 +18,7 @@ DEBUG=True
 LOGFILE=$STACK_DIR/log/stack.log
 LOGDAYS=1
 
-ENABLED_SERVICES=n-cpu,rabbit,g-api,neutron,agent,contrail
+ENABLED_SERVICES=n-cpu,rabbit,neutron,agent,contrail
 
 Q_USE_DEBUG_COMMAND=True
 PHYSICAL_NETWORK=default
