@@ -552,12 +552,14 @@ HWADDR=%s
                              '__contrail_admin_user__': ks_admin_user,
                              '__contrail_admin_password__': ks_admin_password,
                              '__contrail_admin_tenant_name__': ks_admin_tenant_name,
+                             '__contrail_admin_token__': ks_admin_password,
                              '__contrail_memcached_opt__': 'memcache_servers=127.0.0.1:11211' if self._args.multi_tenancy else '',
                              '__contrail_log_file__': '/var/log/contrail/api.log',
                              '__contrail_cassandra_server_list__' : ' '.join('%s:%s' % cassandra_server for cassandra_server in cassandra_server_list),
                              '__contrail_disc_server_ip__': self._args.discovery_ip or '',
                              '__contrail_disc_server_port__': '5998',
                              '__contrail_collectors__' : ' '.join('%s:%s' % collector_server for collector_server in collector_server_list),
+                             '__contrail_redis_server_ip__': cfgm_ip,
                             }
             self._template_substitute_write(api_server_conf_template,
                                             template_vals, temp_dir_name + '/api_server.conf')
