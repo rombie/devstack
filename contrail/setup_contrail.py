@@ -751,8 +751,8 @@ HWADDR=%s
                         '__contrail_instances__' : ncontrols,
                         '__contrail_control_ip__' : cfgm_ip,
                     }
-                    self._template_substitute_write(agent_conf_template,
-                        template_vals, "agent.conf")
+                    self._template_substitute_write(vnswad_conf_template,
+                        template_vals, "vnswad.conf")
                 else:
                     template_vals = {
                         '__contrail_box_ip__' : cidr,
@@ -765,10 +765,10 @@ HWADDR=%s
                         '__contrail_vgw_public_subnet__' : vgw_public_subnet,
                         '__contrail_vgw_public_network__' : vgw_public_network,
                     }
-                    self._template_substitute_write(agent_vgw_conf_template,
-                        template_vals, "agent.conf")
+                    self._template_substitute_write(vnswad_vgw_conf_template,
+                        template_vals, "vnswad.conf")
 
-                self.run_shell("sudo mv agent.conf /etc/contrail/agent.conf")
+                self.run_shell("sudo mv vnswad.conf /etc/contrail/vnswad.conf")
 
                 ## make ifcfg-vhost0
                 with open ('%s/ifcfg-vhost0' % temp_dir_name, 'w') as f:
