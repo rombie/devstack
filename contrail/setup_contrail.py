@@ -473,35 +473,26 @@ HWADDR=%s
 
         # collector in Phase 2
         if 'collector' in self._args.role:
-            self.run_shell("wget http://download.redis.io/releases/redis-2.6.14.tar.gz")
-            self.run_shell("tar xvzf redis-2.6.14.tar.gz redis-2.6.14/sentinel.conf")
-            self.run_shell("cp redis-2.6.14/sentinel.conf /opt/stack/sentinel.conf")
-            self.run_shell("rm -rf redis-2.6.14 redis-2.6.14.tar.gz")
-            REDIS_SENTINEL_BASE="/opt/stack/sentinel.conf"
             REDIS_UVE="/etc/contrail/redis-uve.conf"
             REDIS_QUERY="/etc/contrail/redis-query.conf"
-            REDIS_SENTINEL="/etc/contrail/sentinel.conf"
             if os.path.isfile('/etc/redis/redis.conf'):
                 REDIS_CONF="/etc/redis/redis.conf"
             else:
                 REDIS_CONF="/etc/redis.conf"
             self.run_shell("cp %s %s" %(REDIS_CONF, REDIS_UVE))
             self.run_shell("cp %s %s" %(REDIS_CONF, REDIS_QUERY))
-            self.run_shell("cp %s %s" %(REDIS_SENTINEL_BASE, REDIS_SENTINEL))
 
             self.replace_in_file(REDIS_UVE, 'pidfile /var/run/redis/redis.pid', 'pidfile /var/run/redis/redis-uve.pid')
             self.replace_in_file(REDIS_UVE, 'port 6379', 'port 6381')
             self.replace_in_file(REDIS_UVE, 'bind 127.0.0.1', '#bind 127.0.0.1')
-            self.replace_in_file(REDIS_UVE, 'logfile /var/log/redis/redis.log', 'logfile /var/log/redis/redis-uve.log')
+            self.replace_in_file(REDIS_UVE, 'logfile /var/log/redis/redis-server.log', 'logfile /var/log/redis/redis-uve.log')
             self.replace_in_file(REDIS_UVE, 'dbfilename dump.rdb', 'dbfilename dump-uve.rdb')
 
             self.replace_in_file(REDIS_QUERY, 'pidfile /var/run/redis/redis.pid', 'pidfile /var/run/redis/redis-query.pid')
             self.replace_in_file(REDIS_QUERY, 'port 6379', 'port 6380')
             self.replace_in_file(REDIS_QUERY, 'bind 127.0.0.1', '#bind 127.0.0.1')
-            self.replace_in_file(REDIS_QUERY, 'logfile /var/log/redis/redis.log', 'logfile /var/log/redis/redis-query.log')
+            self.replace_in_file(REDIS_QUERY, 'logfile /var/log/redis/redis-server.log', 'logfile /var/log/redis/redis-query.log')
             self.replace_in_file(REDIS_QUERY, 'dbfilename dump.rdb', 'dbfilename dump-query.rdb')
-
-            self.replace_in_file(REDIS_SENTINEL, 'sentinel monitor mymaster 127.0.0.1 6379 2', 'sentinel monitor mymaster '+collector_ip+' 6381 1')
 
             template_vals = {'__contrail_discovery_ip__': self._args.discovery_ip,
                              '__contrail_host_ip__': self._args.collector_ip,

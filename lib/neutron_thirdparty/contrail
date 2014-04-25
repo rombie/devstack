@@ -336,7 +336,7 @@ function start_contrail() {
     sleep 2
 
     # find the directory where vnc_cfg_api_server was installed and start vnc_cfg_api_server.py
-    screen_it apiSrv "python $(pywhere vnc_cfg_api_server)/vnc_cfg_api_server.py --conf_file /etc/contrail/api_server.conf --rabbit_password ${RABBIT_PASSWORD}"
+    screen_it apiSrv "python $(pywhere vnc_cfg_api_server)/vnc_cfg_api_server.py --conf_file /etc/contrail/api_server.conf --rabbit_password ${RABBIT_PASSWORD} --reset_config"
     echo "Waiting for api-server to start..."
     if ! timeout $SERVICE_TIMEOUT sh -c "while ! http_proxy= wget -q -O- http://${SERVICE_HOST}:8082; do sleep 1; done"; then
         echo "api-server did not start"
@@ -347,7 +347,7 @@ function start_contrail() {
     screen_it svc-mon "python $(pywhere svc_monitor)/svc_monitor.py --reset_config --conf_file /etc/contrail/svc_monitor.conf"
 
     source /etc/contrail/control_param
-    screen_it control "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/control-node/control-node --IFMAP.server_url https://${IFMAP_SERVER}:${IFMAP_PORT} --IFMAP.user ${IFMAP_USER} --IFMAP.password ${IFMAP_PASWD} --DEFAULT.hostname ${HOSTNAME} --DEFAULT.hostip ${HOSTIP} --DEFAULT.bgp_port ${BGP_PORT} ${CERT_OPTS} ${LOG_LOCAL} --collectors ${COLLECTOR}"
+    screen_it control "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/control-node/control-node --IFMAP.server_url https://${IFMAP_SERVER}:${IFMAP_PORT} --IFMAP.user ${IFMAP_USER} --IFMAP.password ${IFMAP_PASWD} --DEFAULT.hostname ${HOSTNAME} --DEFAULT.hostip ${HOSTIP} --DEFAULT.bgp_port ${BGP_PORT} ${CERT_OPTS} ${LOG_LOCAL} --DEFAULT.collectors ${COLLECTOR}:${COLLECTOR_PORT}"
 
     # collector services
     # redis-uve
@@ -355,9 +355,6 @@ function start_contrail() {
     sleep 2
     # redis-query
     screen_it redis-q "sudo redis-server /etc/contrail/redis-query.conf"
-    sleep 2
-    # redis-sentinel
-    screen_it redis-s "sudo redis-server /etc/contrail/sentinel.conf --sentinel"
     sleep 2
 
     # collector/vizd
@@ -370,7 +367,7 @@ function start_contrail() {
     sleep 2
 
     source /etc/contrail/qed_param
-    screen_it qed "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/query_engine/qed --collectors ${COLLECTORS} --cassandra_server_list ${CASSANDRA_SERVER_LIST} --REDIS.server ${REDIS_SERVER} --REDIS.port ${REDIS_SERVER_PORT} log_file /var/log/contrail/qe.log ${LOG_LOCAL}"
+    screen_it qed "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/query_engine/qed --DEFAULT.collectors ${COLLECTORS} --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --REDIS.server ${REDIS_SERVER} --REDIS.port ${REDIS_SERVER_PORT} --DEFAULT.log_file /var/log/contrail/qe.log --DEFAULT.log_local"
     sleep 2
 
     # Provision Vrouter - must be run after API server and schema transformer are up
