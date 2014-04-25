@@ -322,10 +322,8 @@ server=$__contrail_control_ip__
 [FLOWS]
 # Everything in this section is optional
 
-# Maximum number of flows allowed in the vrouter, across all VMs
-# max_system_flows=
-# Maximum number of flows allowed per VM
-# max_vm_flows=
+# Maximum flows allowed per VM (given as % of maximum system flows)
+# max_vm_flows=100
 # Maximum number of link-local flows allowed across all VMs
 # max_system_linklocal_flows=4096
 # Maximum number of link-local flows allowed per VM
@@ -470,10 +468,8 @@ server=$__contrail_control_ip__
 [FLOWS]
 # Everything in this section is optional
 
-# Maximum number of flows allowed in the vrouter, across all VMs
-# max_system_flows=
-# Maximum number of flows allowed per VM
-# max_vm_flows=
+# Maximum flows allowed per VM (given as % of maximum system flows)
+# max_vm_flows=100
 # Maximum number of link-local flows allowed across all VMs
 # max_system_linklocal_flows=4096
 # Maximum number of link-local flows allowed per VM
