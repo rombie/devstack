@@ -61,6 +61,9 @@ nova boot $vmargs --nic net-id=$net1_id vm1
 # vm2: net2
 nova boot $vmargs --nic net-id=$net2_id vm2
 
+# allow VM to come up
+sleep 2
+
 # show where the vms ended up
 nova list --fields name,status,Networks,OS-EXT-SRV-ATTR:host
 
