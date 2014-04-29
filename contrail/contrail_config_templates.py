@@ -14,8 +14,8 @@ listen_port=$__contrail_listen_port__
 auth=keystone
 multi_tenancy=$__contrail_multi_tenancy__
 log_file=$__contrail_log_file__
-#disc_server_ip=$__contrail_disc_server_ip__
-#disc_server_port=$__contrail_disc_server_port__
+disc_server_ip=$__contrail_disc_server_ip__
+disc_server_port=$__contrail_disc_server_port__
 
 [SECURITY]
 use_certs=$__contrail_use_certs__
