@@ -20,9 +20,12 @@ die() {
 
 # allow ping and ssh
 nova secgroup-list
-nova secgroup-list-rules default
-nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
-nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+if ! nova secgroup-list-rules default | grep tcp | grep 22; then
+    nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
+fi
+if ! nova secgroup-list-rules default | grep icmp | grep "\-1"; then
+    nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+fi
 nova secgroup-list-rules default
 
 # net1
