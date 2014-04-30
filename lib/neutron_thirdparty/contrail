@@ -172,6 +172,13 @@ function install_contrail() {
     python $TOP_DIR/contrail/setup_contrail.py --physical_interface=$PHYSICAL_INTERFACE --cfgm_ip $SERVICE_HOST $contrail_gw_interface
     )
 
+    # oslo.config
+    if ! python -c 'import oslo.config' >/dev/null 2>&1; then
+        contrail_cwd=$(pwd)
+        cd /opt/stack/oslo.config
+        sudo python setup.py install
+        cd ${contrail_cwd}
+    fi
 }
 
 function apply_patch() { 
