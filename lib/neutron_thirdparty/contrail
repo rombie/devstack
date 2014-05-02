@@ -322,7 +322,7 @@ function start_contrail() {
     redis-cli flushall
     screen_it redis "sudo redis-server $REDIS_CONF"
 
-    screen_it cass "export MAX_HEAP_SIZE=$CASS_MAX_HEAP_SIZE; export HEAP_NEWSIZE=$CASS_HEAP_NEWSIZE; sudo $CASS_PATH -f"
+    screen_it cass "sudo MAX_HEAP_SIZE=$CASS_MAX_HEAP_SIZE HEAP_NEWSIZE=$CASS_HEAP_NEWSIZE $CASS_PATH -f"
 
     screen_it zk  "cd $CONTRAIL_SRC/third_party/zookeeper-3.4.6; ./bin/zkServer.sh start"
 
