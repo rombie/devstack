@@ -827,7 +827,7 @@ HWADDR=%s
                     self._template_substitute_write(vnswad_vgw_conf_template,
                         template_vals, "vnswad.conf")
 
-                self.run_shell("sudo mv vnswad.conf /etc/contrail/vnswad.conf")
+                self.run_shell("sudo mv vnswad.conf /etc/contrail/contrail-vrouter-agent.conf")
 
                 ## make ifcfg-vhost0
                 with open ('%s/ifcfg-vhost0' % temp_dir_name, 'w') as f:
