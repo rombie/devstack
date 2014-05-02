@@ -11,6 +11,10 @@ set -o xtrace
 BS_FL_CONTROLLERS_PORT=${BS_FL_CONTROLLERS_PORT:-localhost:80}
 BS_FL_OF_PORT=${BS_FL_OF_PORT:-6633}
 
+# Cassandra JAVA Memory Options
+CASS_MAX_HEAP_SIZE=${CASS_MAX_HEAP_SIZE:-1G}
+CASS_HEAP_NEWSIZE=${CASS_HEAP_NEWSIZE:-200M}
+
 function install_contrail() {
     sudo mkdir -p /var/log/contrail
     sudo chmod 777 /var/log/contrail
@@ -123,9 +127,6 @@ function install_contrail() {
 	    apt_get update
 	    apt_get install --force-yes cassandra
 	    
-	    # fix cassandra's stack size issues
-	    test_install_cassandra_patch
-
 	    # don't start cassandra at boot.  I'll screen_it later
 	    sudo service cassandra stop
 	    sudo update-rc.d -f cassandra remove
@@ -179,6 +180,13 @@ function install_contrail() {
     python $TOP_DIR/contrail/setup_contrail.py --physical_interface=$PHYSICAL_INTERFACE --cfgm_ip $SERVICE_HOST $contrail_gw_interface
     )
 
+    # oslo.config
+    if ! python -c 'import oslo.config' >/dev/null 2>&1; then
+        contrail_cwd=$(pwd)
+        cd /opt/stack/oslo.config
+        sudo python setup.py install
+        cd ${contrail_cwd}
+    fi
 }
 
 function apply_patch() { 
@@ -202,10 +210,6 @@ function apply_patch() {
 	    true
 	fi
     fi
-}
-
-function test_install_cassandra_patch() { 
-    apply_patch $TOP_DIR/contrail/cassandra-env.sh.patch /etc/cassandra sudo
 }
 
 function test_install_neutron_patch() { 
@@ -324,7 +328,7 @@ function start_contrail() {
     redis-cli flushall
     screen_it redis "sudo redis-server $REDIS_CONF"
 
-    screen_it cass "sudo cassandra -f"
+    screen_it cass "export MAX_HEAP_SIZE=$CASS_MAX_HEAP_SIZE; export HEAP_NEWSIZE=$CASS_HEAP_NEWSIZE; sudo cassandra -f"
 
     screen_it zk  "cd $CONTRAIL_SRC/third_party/zookeeper-3.4.6; ./bin/zkServer.sh start"
 
@@ -347,7 +351,7 @@ function start_contrail() {
     screen_it svc-mon "python $(pywhere svc_monitor)/svc_monitor.py --reset_config --conf_file /etc/contrail/svc_monitor.conf"
 
     source /etc/contrail/control_param
-    screen_it control "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/control-node/control-node --IFMAP.server_url https://${IFMAP_SERVER}:${IFMAP_PORT} --IFMAP.user ${IFMAP_USER} --IFMAP.password ${IFMAP_PASWD} --DEFAULT.hostname ${HOSTNAME} --DEFAULT.hostip ${HOSTIP} --DEFAULT.bgp_port ${BGP_PORT} ${CERT_OPTS} ${LOG_LOCAL} --DEFAULT.collectors ${COLLECTOR}:${COLLECTOR_PORT}"
+    screen_it control "sudo LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/control-node/control-node --IFMAP.server_url https://${IFMAP_SERVER}:${IFMAP_PORT} --IFMAP.user ${IFMAP_USER} --IFMAP.password ${IFMAP_PASWD} --DEFAULT.hostname ${HOSTNAME} --DEFAULT.hostip ${HOSTIP} --DEFAULT.bgp_port ${BGP_PORT} ${CERT_OPTS} ${LOG_LOCAL} --DEFAULT.collectors ${COLLECTOR}:${COLLECTOR_PORT}"
 
     # collector services
     # redis-uve
@@ -359,7 +363,7 @@ function start_contrail() {
 
     # collector/vizd
     source /etc/contrail/vizd_param
-    screen_it vizd "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/analytics/vizd --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --DEFAULT.hostip ${HOST_IP} --DEFAULT.log_file /var/log/contrail/collector.log"
+    screen_it vizd "sudo LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/analytics/vizd --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --DEFAULT.hostip ${HOST_IP} --DEFAULT.log_file /var/log/contrail/collector.log"
     sleep 2
 
     source /etc/contrail/opserver_param
@@ -367,7 +371,7 @@ function start_contrail() {
     sleep 2
 
     source /etc/contrail/qed_param
-    screen_it qed "export LD_LIBRARY_PATH=/opt/stack/contrail/build/lib; $CONTRAIL_SRC/build/debug/query_engine/qed --DEFAULT.collectors ${COLLECTORS} --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --REDIS.server ${REDIS_SERVER} --REDIS.port ${REDIS_SERVER_PORT} --DEFAULT.log_file /var/log/contrail/qe.log --DEFAULT.log_local"
+    screen_it qed "sudo LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/query_engine/qed --DEFAULT.collectors ${COLLECTORS} --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --REDIS.server ${REDIS_SERVER} --REDIS.port ${REDIS_SERVER_PORT} --DEFAULT.log_file /var/log/contrail/qe.log --DEFAULT.log_local"
     sleep 2
 
     # Provision Vrouter - must be run after API server and schema transformer are up
