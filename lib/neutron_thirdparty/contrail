@@ -328,7 +328,7 @@ function start_contrail() {
     redis-cli flushall
     screen_it redis "sudo redis-server $REDIS_CONF"
 
-    screen_it cass "export MAX_HEAP_SIZE=$CASS_MAX_HEAP_SIZE; export HEAP_NEWSIZE=$CASS_HEAP_NEWSIZE; sudo cassandra -f"
+    screen_it cass "sudo MAX_HEAP_SIZE=$CASS_MAX_HEAP_SIZE HEAP_NEWSIZE=$CASS_HEAP_NEWSIZE cassandra -f"
 
     screen_it zk  "cd $CONTRAIL_SRC/third_party/zookeeper-3.4.6; ./bin/zkServer.sh start"
 
@@ -351,7 +351,7 @@ function start_contrail() {
     screen_it svc-mon "python $(pywhere svc_monitor)/svc_monitor.py --reset_config --conf_file /etc/contrail/svc_monitor.conf"
 
     source /etc/contrail/control_param
-    screen_it control "sudo LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/control-node/control-node --IFMAP.server_url https://${IFMAP_SERVER}:${IFMAP_PORT} --IFMAP.user ${IFMAP_USER} --IFMAP.password ${IFMAP_PASWD} --DEFAULT.hostname ${HOSTNAME} --DEFAULT.hostip ${HOSTIP} --DEFAULT.bgp_port ${BGP_PORT} ${CERT_OPTS} ${LOG_LOCAL} --DEFAULT.collectors ${COLLECTOR}:${COLLECTOR_PORT}"
+    screen_it control "sudo PATH=$PATH:$TOP_DIR/bin LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/control-node/control-node --IFMAP.server_url https://${IFMAP_SERVER}:${IFMAP_PORT} --IFMAP.user ${IFMAP_USER} --IFMAP.password ${IFMAP_PASWD} --DEFAULT.hostname ${HOSTNAME} --DEFAULT.hostip ${HOSTIP} --DEFAULT.bgp_port ${BGP_PORT} ${CERT_OPTS} ${LOG_LOCAL} --DEFAULT.collectors ${COLLECTOR}:${COLLECTOR_PORT}"
 
     # collector services
     # redis-uve
@@ -363,7 +363,7 @@ function start_contrail() {
 
     # collector/vizd
     source /etc/contrail/vizd_param
-    screen_it vizd "sudo LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/analytics/vizd --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --DEFAULT.hostip ${HOST_IP} --DEFAULT.log_file /var/log/contrail/collector.log"
+    screen_it vizd "sudo PATH=$PATH:$TOP_DIR/bin LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/analytics/vizd --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --DEFAULT.hostip ${HOST_IP} --DEFAULT.log_file /var/log/contrail/collector.log"
     sleep 2
 
     source /etc/contrail/opserver_param
@@ -371,7 +371,7 @@ function start_contrail() {
     sleep 2
 
     source /etc/contrail/qed_param
-    screen_it qed "sudo LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/query_engine/qed --DEFAULT.collectors ${COLLECTORS} --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --REDIS.server ${REDIS_SERVER} --REDIS.port ${REDIS_SERVER_PORT} --DEFAULT.log_file /var/log/contrail/qe.log --DEFAULT.log_local"
+    screen_it qed "sudo PATH=$PATH:$TOP_DIR/bin LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/query_engine/qed --DEFAULT.collectors ${COLLECTORS} --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --REDIS.server ${REDIS_SERVER} --REDIS.port ${REDIS_SERVER_PORT} --DEFAULT.log_file /var/log/contrail/qe.log --DEFAULT.log_local"
     sleep 2
 
     # Provision Vrouter - must be run after API server and schema transformer are up
