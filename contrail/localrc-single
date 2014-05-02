@@ -18,6 +18,11 @@ enable_service agent
 enable_service disco
 enable_service redis
 enable_service contrail
+enable_service redis-u
+enable_service redis-q
+enable_service vizd
+enable_service opserver
+enable_service qed
 
 disable_service n-net
 enable_service q-svc

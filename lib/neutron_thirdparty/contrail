@@ -35,19 +35,27 @@ function install_contrail() {
 	apt_get install libevent-dev libxml2-dev libxslt-dev
 	apt_get install uml-utilities
 
-	# last version of redis
-	sudo add-apt-repository -y ppa:rwky/redis
-	apt_get update
-
-	apt_get install redis-server
+        if ! which redis-server > /dev/null 2>&1 ; then
+            sudo apt-get install libjemalloc1
+            wget http://us.archive.ubuntu.com/ubuntu/pool/universe/r/redis/redis-server_2.6.13-1_amd64.deb
+            sudo dpkg -i redis-server_2.6.13-1_amd64.deb
+            rm -rf redis-server_2.6.13-1_amd64.deb
+            # service will be started later
+            sudo service redis-server stop
+        fi
     else
 	sudo yum -y install patch scons flex bison make vim
 	sudo yum -y install expat-devel gettext-devel curl-devel
 	sudo yum -y install gcc-c++ python-devel autoconf automake libtool
 	sudo yum -y install libevent libevent-devel libxml2-devel libxslt-devel
 	sudo yum -y install tunctl
-	sudo yum -y install redis
 	sudo yum -y install java-1.7.0-openjdk
+
+        if ! which redis-server > /dev/null 2>&1 ; then
+            wget http://mir01.syntis.net/atomic/fedora/17/x86_64/RPMS/redis-2.6.13-3.fc17.art.x86_64.rpm
+            sudo yum -y install redis-2.6.13-3.fc17.art.x86_64.rpm
+            rm -rf redis-2.6.13-3.fc17.art.x86_64.rpm
+        fi
     fi
 
     # api server requirements
@@ -122,13 +130,13 @@ function install_contrail() {
 	    # don't start cassandra at boot.  I'll screen_it later
 	    sudo service cassandra stop
 	    sudo update-rc.d -f cassandra remove
-	elif [ ! -d $CONTRAIL_SRC/third_party/apache-cassandra-2.0.2-bin ]; then
-        contrail_cwd=$(pwd)
-        cd $CONTRAIL_SRC/third_party
-        wget -N http://repo1.maven.org/maven2/org/apache/cassandra/apache-cassandra/2.0.2/apache-cassandra-2.0.2-bin.tar.gz
-        tar xvzf apache-cassandra-2.0.2-bin.tar.gz
-        cd ${contrail_cwd}
-    fi
+	else
+            contrail_cwd=$(pwd)
+            cd $CONTRAIL_SRC/third_party
+            wget http://rpm.datastax.com/community/noarch/cassandra12-1.2.11-1.noarch.rpm
+            sudo yum -y install ./cassandra12-1.2.11-1.noarch.rpm
+            cd ${contrail_cwd}
+        fi
     fi
 	    
     # get ifmap 
@@ -312,17 +320,15 @@ function start_contrail() {
 
     if is_ubuntu; then
         REDIS_CONF="/etc/redis/redis.conf"
-        CASS_PATH="/usr/sbin/cassandra"
     else
         REDIS_CONF="/etc/redis.conf"
-        CASS_PATH="$CONTRAIL_SRC/third_party/apache-cassandra-2.0.2/bin/cassandra"
     fi
 
     # launch ...
     redis-cli flushall
     screen_it redis "sudo redis-server $REDIS_CONF"
 
-    screen_it cass "sudo MAX_HEAP_SIZE=$CASS_MAX_HEAP_SIZE HEAP_NEWSIZE=$CASS_HEAP_NEWSIZE $CASS_PATH -f"
+    screen_it cass "sudo MAX_HEAP_SIZE=$CASS_MAX_HEAP_SIZE HEAP_NEWSIZE=$CASS_HEAP_NEWSIZE cassandra -f"
 
     screen_it zk  "cd $CONTRAIL_SRC/third_party/zookeeper-3.4.6; ./bin/zkServer.sh start"
 
@@ -334,7 +340,7 @@ function start_contrail() {
     sleep 2
 
     # find the directory where vnc_cfg_api_server was installed and start vnc_cfg_api_server.py
-    screen_it apiSrv "python $(pywhere vnc_cfg_api_server)/vnc_cfg_api_server.py --conf_file /etc/contrail/api_server.conf --rabbit_password ${RABBIT_PASSWORD}"
+    screen_it apiSrv "python $(pywhere vnc_cfg_api_server)/vnc_cfg_api_server.py --conf_file /etc/contrail/api_server.conf --rabbit_password ${RABBIT_PASSWORD} --reset_config"
     echo "Waiting for api-server to start..."
     if ! timeout $SERVICE_TIMEOUT sh -c "while ! http_proxy= wget -q -O- http://${SERVICE_HOST}:8082; do sleep 1; done"; then
         echo "api-server did not start"
@@ -345,7 +351,28 @@ function start_contrail() {
     screen_it svc-mon "python $(pywhere svc_monitor)/svc_monitor.py --reset_config --conf_file /etc/contrail/svc_monitor.conf"
 
     source /etc/contrail/control_param
-    screen_it control "sudo PATH=$PATH:$TOP_DIR/bin LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/control-node/control-node --IFMAP.server_url https://${IFMAP_SERVER}:${IFMAP_PORT} --IFMAP.user ${IFMAP_USER} --IFMAP.password ${IFMAP_PASWD} --DEFAULT.hostname ${HOSTNAME} --DEFAULT.hostip ${HOSTIP} --DEFAULT.bgp_port ${BGP_PORT} ${CERT_OPTS} ${LOG_LOCAL}"
+    screen_it control "sudo PATH=$PATH:$TOP_DIR/bin LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/control-node/control-node --IFMAP.server_url https://${IFMAP_SERVER}:${IFMAP_PORT} --IFMAP.user ${IFMAP_USER} --IFMAP.password ${IFMAP_PASWD} --DEFAULT.hostname ${HOSTNAME} --DEFAULT.hostip ${HOSTIP} --DEFAULT.bgp_port ${BGP_PORT} ${CERT_OPTS} ${LOG_LOCAL} --DEFAULT.collectors ${COLLECTOR}:${COLLECTOR_PORT}"
+
+    # collector services
+    # redis-uve
+    screen_it redis-u "sudo redis-server /etc/contrail/redis-uve.conf"
+    sleep 2
+    # redis-query
+    screen_it redis-q "sudo redis-server /etc/contrail/redis-query.conf"
+    sleep 2
+
+    # collector/vizd
+    source /etc/contrail/vizd_param
+    screen_it vizd "sudo PATH=$PATH:$TOP_DIR/bin LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/analytics/vizd --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --DEFAULT.hostip ${HOST_IP} --DEFAULT.log_file /var/log/contrail/collector.log"
+    sleep 2
+
+    source /etc/contrail/opserver_param
+    screen_it opserver "python  $(pywhere opserver)/opserver.py --collectors ${COLLECTORS} --host_ip ${HOST_IP} ${LOG_FILE} ${LOG_LOCAL}"
+    sleep 2
+
+    source /etc/contrail/qed_param
+    screen_it qed "sudo PATH=$PATH:$TOP_DIR/bin LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/query_engine/qed --DEFAULT.collectors ${COLLECTORS} --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --REDIS.server ${REDIS_SERVER} --REDIS.port ${REDIS_SERVER_PORT} --DEFAULT.log_file /var/log/contrail/qe.log --DEFAULT.log_local"
+    sleep 2
 
     # Provision Vrouter - must be run after API server and schema transformer are up
     sleep 2
@@ -429,6 +456,7 @@ function stop_contrail() {
             screen -X -S $SESSION quit
         fi
     fi
+    sudo pkill redis-server
     cmd=$(lsmod | grep vrouter)
     if [ $? == 0 ]; then
         cmd=$(sudo rmmod vrouter)

@@ -16,6 +16,7 @@ multi_tenancy=$__contrail_multi_tenancy__
 log_file=$__contrail_log_file__
 disc_server_ip=$__contrail_disc_server_ip__
 disc_server_port=$__contrail_disc_server_port__
+collectors=$__contrail_collectors__
 
 [SECURITY]
 use_certs=$__contrail_use_certs__
@@ -62,6 +63,7 @@ log_file=$__contrail_log_file__
 cassandra_server_list=$__contrail_cassandra_server_list__
 disc_server_ip=$__contrail_disc_server_ip__
 disc_server_port=$__contrail_disc_server_port__
+collectors=$__contrail_collectors__
 
 [SECURITY]
 use_certs=$__contrail_use_certs__
@@ -89,6 +91,7 @@ log_file=$__contrail_log_file__
 cassandra_server_list=$__contrail_cassandra_server_list__
 disc_server_ip=$__contrail_disc_server_ip__
 disc_server_port=$__contrail_disc_server_port__
+collectors=$__contrail_collectors__
 
 [SECURITY]
 use_certs=$__contrail_use_certs__
@@ -185,6 +188,7 @@ CASSANDRA_SERVER_LIST=$__contrail_cassandra_server_list__
 REDIS_SERVER=$__contrail_redis_server__
 REDIS_SERVER_PORT=$__contrail_redis_server_port__
 DISCOVERY=$__contrail_discovery_ip__
+COLLECTORS=$__contrail_collectors__
 HOST_IP=$__contrail_host_ip__
 LISTEN_PORT=$__contrail_listen_port__
 HTTP_SERVER_PORT=$__contrail_http_server_port__
@@ -197,8 +201,8 @@ opserver_param_template = string.Template("""
 REDIS_SERVER=$__contrail_redis_server__
 REDIS_SERVER_PORT=$__contrail_redis_server_port__
 REDIS_QUERY_PORT=$__contrail_redis_query_port__
-COLLECTOR=$__contrail_collector__
-COLLECTOR_PORT=$__contrail_collector_port__
+HOST_IP=$__contrail_host_ip__
+COLLECTORS=$__contrail_collectors__
 HTTP_SERVER_PORT=$__contrail_http_server_port__
 REST_API_PORT=$__contrail_rest_api_port__
 LOG_FILE=$__contrail_log_file__
