@@ -506,6 +506,7 @@ HWADDR=%s
 
             template_vals = {'__contrail_discovery_ip__': self._args.discovery_ip,
                              '__contrail_cassandra_server_list__' : ' '.join('%s:%s' % cassandra_server for cassandra_server in cassandra_server_list),
+                             '__contrail_host_ip__': collector_ip,
                              '__contrail_log_local__': '--log-local',
                              '__contrail_log_file__': '--log-file=/var/log/contrail/qe.log',
                              '__contrail_collectors__' : ' '.join('%s:%s' % collector_server for collector_server in collector_server_list),
