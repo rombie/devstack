@@ -187,6 +187,22 @@ function install_contrail() {
         sudo python setup.py install
         cd ${contrail_cwd}
     fi
+    if ! which node > /dev/null 2>&1 ; then
+        wget http://nodejs.org/dist/v0.8.15/node-v0.8.15.tar.gz -O node-v0.8.15.tar.gz
+        tar -xf node-v0.8.15.tar.gz
+        contrail_cwd=$(pwd)
+        cd node-v0.8.15
+        ./configure; make; sudo make install
+        cd ${contrail_cwd}
+        rm -rf node-v0.8.15.tar.gz
+        rm -rf node-v0.8.15
+    fi
+    if [ ! -d $CONTRAIL_SRC/contrail-web-core/node_modules ]; then
+        contrail_cwd=$(pwd)
+        cd $CONTRAIL_SRC/contrail-web-core
+        ./fetch_packages.sh
+        make prod-env
+    fi
 }
 
 function apply_patch() { 
@@ -374,12 +390,15 @@ function start_contrail() {
     screen_it qed "sudo PATH=$PATH:$TOP_DIR/bin LD_LIBRARY_PATH=/opt/stack/contrail/build/lib $CONTRAIL_SRC/build/debug/query_engine/qed --DEFAULT.collectors ${COLLECTORS} --DEFAULT.cassandra_server_list ${CASSANDRA_SERVER_LIST} --REDIS.server ${REDIS_SERVER} --REDIS.port ${REDIS_SERVER_PORT} --DEFAULT.log_file /var/log/contrail/qe.log --DEFAULT.log_local"
     sleep 2
 
+    #provision control
+    python /opt/stack/contrail/controller/src/config/utils/provision_control.py --api_server_ip $SERVICE_HOST --api_server_port 8082 --host_name $HOSTNAME --host_ip $HOST_IP
+
     # Provision Vrouter - must be run after API server and schema transformer are up
     sleep 2
     admin_user=${CONTRAIL_ADMIN_USERNAME:-"admin"}
     admin_passwd=${ADMIN_PASSWORD:-"contrail123"}
     admin_tenant=${CONTRAIL_ADMIN_TENANT:-"admin"}
-    python $TOP_DIR/contrail/provision_vrouter.py --host_name $HOSTNAME --host_ip $HOST_IP --api_server_ip $SERVICE_HOST --oper add --admin_user $admin_user --admin_password $admin_passwd --admin_tenant_name $admin_tenant
+    python /opt/stack/contrail/controller/src/config/utils/provision_vrouter.py --host_name $HOSTNAME --host_ip $HOST_IP --api_server_ip $SERVICE_HOST --oper add --admin_user $admin_user --admin_password $admin_passwd --admin_tenant_name $admin_tenant
 
     # vrouter
     test_insert_vrouter
@@ -430,6 +449,10 @@ END
 	    --oper add
     fi
 
+    screen_it redis-w "sudo redis-server /etc/contrail/redis-webui.conf"
+
+    screen_it ui-jobs "sudo node /opt/stack/contrail/contrail-web-core/jobServerStart.js"
+    screen_it ui-webs "sudo node /opt/stack/contrail/contrail-web-core/webServerStart.js"
 
     # restore saved screen settings
     SCREEN_NAME=$SAVED_SCREEN_NAME

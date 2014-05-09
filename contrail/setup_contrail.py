@@ -176,7 +176,7 @@ class Setup(object):
         self._args.openstack_mgmt_ip = self._args.cfgm_ip
         self._args.database_listen_ip = self._args.cfgm_ip
         self._args.cassandra_ip_list = ['127.0.0.1']
-        self._args.role = ['config', 'openstack', 'control', 'compute', 'collector']
+        self._args.role = ['config', 'openstack', 'control', 'compute', 'collector', 'webui']
 
     #end _parse_args
 
@@ -809,6 +809,8 @@ HWADDR=%s
                         '__contrail_disc_ip__' : discovery_ip,
                         '__contrail_instances__' : ncontrols,
                         '__contrail_control_ip__' : cfgm_ip,
+                        '__contrail_collector_ip__' : collector_ip,
+                        '__contrail_collector_port__' : '8086',
                     }
                     self._template_substitute_write(vnswad_conf_template,
                         template_vals, "vnswad.conf")
@@ -820,6 +822,8 @@ HWADDR=%s
                         '__contrail_disc_ip__' : discovery_ip,
                         '__contrail_instances__' : ncontrols,
                         '__contrail_control_ip__' : cfgm_ip,
+                        '__contrail_collector_ip__' : collector_ip,
+                        '__contrail_collector_port__' : '8086',
                         '__contrail_vgw_interface__' : vgw_interface,
                         '__contrail_vgw_public_subnet__' : vgw_public_subnet,
                         '__contrail_vgw_public_network__' : vgw_public_network,
@@ -880,25 +884,19 @@ SUBCHANNELS=1,2,3
         # role == compute && !cfgm
 
         if 'webui' in self._args.role:
-            openstack_ip = self._args.openstack_ip
-            self.run_shell("sudo sed \"s/config.cnfg.server_ip.*/config.cnfg.server_ip = '%s';/g\" /etc/contrail/config.global.js > config.global.js.new" %(cfgm_ip))
-            self.run_shell("sudo mv config.global.js.new /etc/contrail/config.global.js")
-            self.run_shell("sudo sed \"s/config.networkManager.ip.*/config.networkManager.ip = '%s';/g\" /etc/contrail/config.global.js > config.global.js.new" %(cfgm_ip))
-            self.run_shell("sudo mv config.global.js.new /etc/contrail/config.global.js")
-            self.run_shell("sudo sed \"s/config.imageManager.ip.*/config.imageManager.ip = '%s';/g\" /etc/contrail/config.global.js > config.global.js.new" %(openstack_ip))
-            self.run_shell("sudo mv config.global.js.new /etc/contrail/config.global.js")
-            self.run_shell("sudo sed \"s/config.computeManager.ip.*/config.computeManager.ip = '%s';/g\" /etc/contrail/config.global.js > config.global.js.new" %(openstack_ip))
-            self.run_shell("sudo mv config.global.js.new /etc/contrail/config.global.js")
-            self.run_shell("sudo sed \"s/config.identityManager.ip.*/config.identityManager.ip = '%s';/g\" /etc/contrail/config.global.js > config.global.js.new" %(openstack_ip))
-            self.run_shell("sudo mv config.global.js.new /etc/contrail/config.global.js")
-            self.run_shell("sudo sed \"s/config.storageManager.ip.*/config.storageManager.ip = '%s';/g\" /etc/contrail/config.global.js > config.global.js.new" %(openstack_ip))
-            self.run_shell("sudo mv config.global.js.new /etc/contrail/config.global.js")            
-            if collector_ip:
-                self.run_shell("sudo sed \"s/config.analytics.server_ip.*/config.analytics.server_ip = '%s';/g\" /etc/contrail/config.global.js > config.global.js.new" %(collector_ip))
-                self.run_shell("sudo mv config.global.js.new /etc/contrail/config.global.js")
-            if self._args.cassandra_ip_list:
-                self.run_shell("sudo sed \"s/config.cassandra.server_ips.*/config.cassandra.server_ips = %s;/g\" /etc/contrail/config.global.js > config.global.js.new" %(str(self._args.cassandra_ip_list)))
-                self.run_shell("sudo mv config.global.js.new /etc/contrail/config.global.js")    
+            REDIS_WEBUI="/etc/contrail/redis-webui.conf"
+            if os.path.isfile('/etc/redis/redis.conf'):
+                REDIS_CONF="/etc/redis/redis.conf"
+            else:
+                REDIS_CONF="/etc/redis.conf"
+            self.run_shell("cp %s %s" %(REDIS_CONF, REDIS_WEBUI))
+
+            self.replace_in_file(REDIS_WEBUI, 'pidfile /var/run/redis/redis.pid', 'pidfile /var/run/redis/redis-webui.pid')
+            self.replace_in_file(REDIS_WEBUI, 'port 6379', 'port 6383')
+            self.replace_in_file(REDIS_WEBUI, 'bind 127.0.0.1', '#bind 127.0.0.1')
+            self.replace_in_file(REDIS_WEBUI, 'logfile /var/log/redis/redis-server.log', 'logfile /var/log/redis/redis-webui.log')
+            self.replace_in_file(REDIS_WEBUI, 'dbfilename dump.rdb', 'dbfilename dump-webui.rdb')
+
 
         """
         if 'config' in self._args.role and self._args.use_certs:
