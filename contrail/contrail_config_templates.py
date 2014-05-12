@@ -189,7 +189,6 @@ REDIS_SERVER=$__contrail_redis_server__
 REDIS_SERVER_PORT=$__contrail_redis_server_port__
 DISCOVERY=$__contrail_discovery_ip__
 COLLECTORS=$__contrail_collectors__
-HOST_IP=$__contrail_host_ip__
 LISTEN_PORT=$__contrail_listen_port__
 HTTP_SERVER_PORT=$__contrail_http_server_port__
 LOG_FILE=$__contrail_log_file__
@@ -250,8 +249,8 @@ vnswad_conf_template = string.Template("""
 [COLLECTOR]
 # IP address and port to be used to connect to collector. If IP is not configured,
 # value provided by discovery service will be used. (Optional)
-# port=8086
-# server=
+port=$__contrail_collector_port__
+server=$__contrail_collector_ip__
 
 [CONTROL-NODE]
 # IP address to be used to connect to control-node. Maximum of 2 IP addresses 

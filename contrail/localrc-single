@@ -23,6 +23,9 @@ enable_service redis-q
 enable_service vizd
 enable_service opserver
 enable_service qed
+enable_service redis-w
+enable_service ui-jobs
+enable_service ui-webs
 
 disable_service n-net
 enable_service q-svc
