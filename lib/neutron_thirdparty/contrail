@@ -451,8 +451,8 @@ END
 
     screen_it redis-w "sudo redis-server /etc/contrail/redis-webui.conf"
 
-    screen_it ui-jobs "sudo node /opt/stack/contrail/contrail-web-core/jobServerStart.js"
-    screen_it ui-webs "sudo node /opt/stack/contrail/contrail-web-core/webServerStart.js"
+    screen_it ui-jobs "cd /opt/stack/contrail/contrail-web-core; sudo node jobServerStart.js"
+    screen_it ui-webs "cd /opt/stack/contrail/contrail-web-core; sudo node webServerStart.js"
 
     # restore saved screen settings
     SCREEN_NAME=$SAVED_SCREEN_NAME
