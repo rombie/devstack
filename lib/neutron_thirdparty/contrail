@@ -124,9 +124,9 @@ function install_contrail() {
 	    # See http://wiki.apache.org/cassandra/DebianPackaging
 	    echo "deb http://www.apache.org/dist/cassandra/debian 12x main" | \
 		sudo tee /etc/apt/sources.list.d/cassandra.list
-	    gpg --keyserver pgp.mit.edu --recv-keys F758CE318D77295D
+	    gpg --keyserver-options timeout=1 --keyserver pgp.mit.edu --recv-keys F758CE318D77295D
 	    gpg --export --armor F758CE318D77295D | sudo apt-key add -
-	    gpg --keyserver pgp.mit.edu --recv-keys 2B5C1B00
+	    gpg --keyserver-options timeout=1 --keyserver pgp.mit.edu --recv-keys 2B5C1B00
 	    gpg --export --armor 2B5C1B00 | sudo apt-key add -
 
 	    apt_get update
@@ -193,7 +193,9 @@ function install_contrail() {
         cd ${contrail_cwd}
     fi
     if ! which node > /dev/null 2>&1 ; then
-        wget http://nodejs.org/dist/v0.8.15/node-v0.8.15.tar.gz -O node-v0.8.15.tar.gz
+        if [ ! -f node-v0.8.15.tar.gz]; then
+            wget http://nodejs.org/dist/v0.8.15/node-v0.8.15.tar.gz -O node-v0.8.15.tar.gz
+        fi
         tar -xf node-v0.8.15.tar.gz
         contrail_cwd=$(pwd)
         cd node-v0.8.15
