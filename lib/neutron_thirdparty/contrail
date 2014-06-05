@@ -207,8 +207,8 @@ function install_contrail() {
     if [ ! -d $CONTRAIL_SRC/contrail-web-core/node_modules ]; then
         contrail_cwd=$(pwd)
         cd $CONTRAIL_SRC/contrail-web-core
-        ./fetch_packages.sh
-        make prod-env
+        make fetch-pkgs-prod
+        make dev-env REPO=webController
     fi
 }
 
