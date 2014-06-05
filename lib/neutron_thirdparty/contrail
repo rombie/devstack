@@ -255,7 +255,7 @@ function insert_vrouter() {
         || echo "Error creating interface: $DEVICE"
 
     echo "Adding $DEVICE to vrouter"
-    sudo $VIF --add $DEVICE --mac $DEV_MAC --vrf 0 --mode x --type vhost \
+    sudo $VIF --add $DEVICE --mac $DEV_MAC --vrf 0 --xconnect $dev --mode x --type vhost \
 	|| echo "Error adding $DEVICE to vrouter"
 
     echo "Adding $dev to vrouter"
