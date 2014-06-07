@@ -86,14 +86,13 @@ function install_contrail() {
         fi
     fi
 
-    # If CONTRAIL_REPO_SETUP_SKIP is not set, sync the repo.
-    if [ -z $CONTRAIL_REPO_SYNC_SKIP ]; then
+    # If CONTRAIL_REPO_SKIP_SYNC is not set, sync the repo.
+    if [ -z $CONTRAIL_REPO_SKIP_SYNC ]; then
         repo sync
         python third_party/fetch_packages.py
+        (cd third_party/thrift-*; touch configure.ac README ChangeLog; autoreconf --force --install)
+        scons
     fi
-
-    (cd third_party/thrift-*; touch configure.ac README ChangeLog; autoreconf --force --install)
-    scons
     cd ${contrail_cwd}
 
     # install contrail modules

@@ -57,3 +57,6 @@ NOVA_VIF_DRIVER=nova_contrail_vif.contrailvif.VRouterVIFDriver
 
 CASS_MAX_HEAP_SIZE=1G
 CASS_HEAP_NEWSIZE=200M
+
+# set CONTRAIL_REPO_SKIP_SYNC to avoid sync and build
+# CONTRAIL_REPO_SKIP_SYNC=yes
