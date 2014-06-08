@@ -43,13 +43,8 @@ SERVICE_TOKEN=contrail123
 SERVICE_PASSWORD=contrail123
 ADMIN_PASSWORD=contrail123
 
-ENABLE_CONTRAIL=yes
 Q_PLUGIN=contrail
 PHYSICAL_INTERFACE=eth0
-
-# use contrail forked neutron repo
-NEUTRON_REPO=https://github.com/dsetia/neutron.git
-NEUTRON_BRANCH=master
 
 # repo proto is https or (default) ssh. Leave commented for ssh
 # CONTRAIL_REPO_PROTO=https
@@ -62,3 +57,6 @@ NOVA_VIF_DRIVER=nova_contrail_vif.contrailvif.VRouterVIFDriver
 
 CASS_MAX_HEAP_SIZE=1G
 CASS_HEAP_NEWSIZE=200M
+
+# set CONTRAIL_REPO_SKIP_SYNC to avoid sync and build
+# CONTRAIL_REPO_SKIP_SYNC=yes
