@@ -700,7 +700,7 @@ HWADDR=%s
                                             dns_template_vals, temp_dir_name + '/dns_param')
             self.run_shell("sudo mv %s/dns_param /etc/contrail/dns_param" %(temp_dir_name))
 
-            dir = os.env['CONTRAIL_SRC'] + /third_party/irond-0.3.0-bin"
+            dir = os.env['CONTRAIL_SRC'] + "/third_party/irond-0.3.0-bin"
             self.run_shell("echo >> %s/basicauthusers.properties" % dir)
             self.run_shell("echo '# Contrail users' >> %s/basicauthusers.properties" % dir)
             self.run_shell("echo 'api-server:api-server' >> %s/basicauthusers.properties" % dir)
