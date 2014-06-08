@@ -427,7 +427,7 @@ HWADDR=%s
         # generate service token
         self.service_token = self._args.service_token
         if not self.service_token:
-            self.run_shell("sudo openssl rand -hex 10 > /etc/contrail/service.token")
+            self.run_shell("sudo openssl rand -hex 10 | sudo tee /etc/contrail/service.token > /dev/null")
             tok_fd = open('/etc/contrail/service.token')
             self.service_token = tok_fd.read()
             tok_fd.close()
@@ -441,7 +441,7 @@ HWADDR=%s
         """
 
         # Disable selinux
-        self.run_shell("sudo sed 's/SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config > config.new")
+        self.run_shell("sudo sed 's/SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config | sudo tee config.new > /dev/null")
         self.run_shell("sudo mv config.new /etc/selinux/config")
         self.run_shell("setenforce 0")
 
@@ -706,7 +706,7 @@ HWADDR=%s
             self.run_shell("echo 'api-server:api-server' >> %s/basicauthusers.properties" % dir)
             self.run_shell("echo 'schema-transformer:schema-transformer' >> %s/basicauthusers.properties" % dir)
             self.run_shell("echo 'svc-monitor:svc-monitor' >> %s/basicauthusers.properties" % dir)
-            self.run_shell("sudo sed -e '/%s:/d' -e '/%s.dns:/d' %s/%s > %s/%s.new" \
+            self.run_shell("sudo sed -e '/%s:/d' -e '/%s.dns:/d' %s/%s | sudo tee %s/%s.new > /dev/null" \
                           %(control_ip, control_ip, dir, 'basicauthusers.properties',
                                                     dir, 'basicauthusers.properties'))
             self.run_shell("echo '%s:%s' >> %s/%s.new" \
@@ -729,20 +729,20 @@ HWADDR=%s
                 self.run_shell('sudo cp /etc/libvirt/qemu.conf qemu.conf')
                 self.run_shell('sudo chown %s qemu.conf' % whoami)
                 if  dist == 'centos':
-                    self.run_shell('sudo echo "clear_emulator_capabilities = 1" >> qemu.conf')
-                    self.run_shell('sudo echo \'user = "root"\' >> qemu.conf')
-                    self.run_shell('sudo echo \'group = "root"\' >> qemu.conf')
-                self.run_shell('sudo echo \'cgroup_device_acl = [\' >> qemu.conf')
-                self.run_shell('sudo echo \'    "/dev/null", "/dev/full", "/dev/zero",\' >> qemu.conf')
-                self.run_shell('sudo echo \'    "/dev/random", "/dev/urandom",\' >> qemu.conf')
-                self.run_shell('sudo echo \'    "/dev/ptmx", "/dev/kvm", "/dev/kqemu",\' >> qemu.conf')
-                self.run_shell('sudo echo \'    "/dev/rtc", "/dev/hpet","/dev/net/tun",\' >> qemu.conf')
-                self.run_shell('sudo echo \']\' >> qemu.conf')
+                    self.run_shell('sudo echo "clear_emulator_capabilities = 1" | sudo tee -a qemu.conf > /dev/null')
+                    self.run_shell('sudo echo \'user = "root"\' | sudo tee -a qemu.conf > /dev/null')
+                    self.run_shell('sudo echo \'group = "root"\' | sudo tee -a qemu.conf > /dev/null')
+                self.run_shell('sudo echo \'cgroup_device_acl = [\' | sudo tee -a qemu.conf')
+                self.run_shell('sudo echo \'    "/dev/null", "/dev/full", "/dev/zero",\' | sudo tee -a qemu.conf > /dev/null')
+                self.run_shell('sudo echo \'    "/dev/random", "/dev/urandom",\' | sudo tee -a qemu.conf > /dev/null')
+                self.run_shell('sudo echo \'    "/dev/ptmx", "/dev/kvm", "/dev/kqemu",\' | sudo tee -a qemu.conf > /dev/null')
+                self.run_shell('sudo echo \'    "/dev/rtc", "/dev/hpet","/dev/net/tun",\' | sudo tee -a qemu.conf > /dev/null')
+                self.run_shell('sudo echo \']\' | sudo tee -a qemu.conf > /dev/null')
                 self.run_shell('sudo cp qemu.conf /etc/libvirt/qemu.conf')
                 self._fixed_qemu_conf = True
                 # add "alias bridge off" in /etc/modprobe.conf for Centos
             if  dist == 'centos':
-                self.run_shell('sudo echo "alias bridge off" > /etc/modprobe.conf')
+                self.run_shell('sudo echo "alias bridge off" | sudo tee /etc/modprobe.conf > /dev/null')
 
         if 'compute' in self._args.role :
             openstack_ip = self._args.openstack_ip
