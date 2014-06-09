@@ -60,3 +60,6 @@ CASS_HEAP_NEWSIZE=200M
 
 # set CONTRAIL_REPO_SKIP_SYNC to avoid sync and build
 # CONTRAIL_REPO_SKIP_SYNC=yes
+
+# uncomment to use specific contrail bits instead of t-o-t
+# CONTRAIL_REPO=devstack.xml
