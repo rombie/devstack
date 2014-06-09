@@ -194,7 +194,7 @@ function install_contrail() {
         cd ${contrail_cwd}
     fi
     if ! which node > /dev/null 2>&1 ; then
-        if [ ! -f node-v0.8.15.tar.gz]; then
+        if [ ! -f node-v0.8.15.tar.gz ]; then
             wget http://nodejs.org/dist/v0.8.15/node-v0.8.15.tar.gz -O node-v0.8.15.tar.gz
         fi
         tar -xf node-v0.8.15.tar.gz
