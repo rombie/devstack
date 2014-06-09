@@ -706,15 +706,10 @@ HWADDR=%s
             self.run_shell("echo 'api-server:api-server' >> %s/basicauthusers.properties" % dir)
             self.run_shell("echo 'schema-transformer:schema-transformer' >> %s/basicauthusers.properties" % dir)
             self.run_shell("echo 'svc-monitor:svc-monitor' >> %s/basicauthusers.properties" % dir)
-            self.run_shell("sudo sed -e '/%s:/d' -e '/%s.dns:/d' %s/%s | sudo tee %s/%s.new > /dev/null" \
-                          %(control_ip, control_ip, dir, 'basicauthusers.properties',
-                                                    dir, 'basicauthusers.properties'))
-            self.run_shell("echo '%s:%s' >> %s/%s.new" \
+            self.run_shell("echo '%s:%s' >> %s/%s" \
                      %(control_ip, control_ip, dir, 'basicauthusers.properties'))
-            self.run_shell("echo '%s.dns:%s.dns' >> %s/%s.new" \
+            self.run_shell("echo '%s.dns:%s.dns' >> %s/%s" \
                      %(control_ip, control_ip, dir, 'basicauthusers.properties'))
-            self.run_shell("sudo mv %s/%s.new %s/%s" \
-                % (dir, 'basicauthusers.properties', dir, 'basicauthusers.properties'))
             self.run_shell("echo '%s=%s--0000000001-1' >> %s/%s" \
                      %(control_ip, control_ip, dir, 'publisher.properties'))
             if self._args.puppet_server:
