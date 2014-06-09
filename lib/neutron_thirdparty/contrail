@@ -70,6 +70,7 @@ function install_contrail() {
     sudo pip install kazoo pyinotify
     sudo pip install bottle
 
+    CONTRAIL_REPO=${CONTRAIL_REPO:-default.xml}
     CONTRAIL_REPO_PROTO=${CONTRAIL_REPO_PROTO:-ssh}
     CONTRAIL_SRC=${CONTRAIL_SRC:-/opt/stack/contrail}
     mkdir -p $CONTRAIL_SRC/third_party
@@ -79,9 +80,9 @@ function install_contrail() {
         git config --global --get user.name || git config --global user.name "Anonymous"
         git config --global --get user.email || git config --global user.email "anonymous@nowhere.com"
         if [ "$CONTRAIL_REPO_PROTO" == "ssh" ]; then
-            repo init -u git@github.com:Juniper/contrail-vnc
+            repo init -u git@github.com:Juniper/contrail-vnc -m $CONTRAIL_REPO
         else
-            repo init -u https://github.com/Juniper/contrail-vnc
+            repo init -u https://github.com/Juniper/contrail-vnc -m $CONTRAIL_REPO
             sed -i 's/fetch=".."/fetch=\"https:\/\/github.com\/Juniper\/\"/' .repo/manifest.xml
         fi
     fi
