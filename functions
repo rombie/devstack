@@ -67,7 +67,6 @@ function apt_get() {
         apt-get --option "Dpkg::Options::=--force-confold" --force-yes --assume-yes "$@"
 }
 
-
 # Gracefully cp only if source file/dir exists
 # cp_it source destination
 function cp_it {

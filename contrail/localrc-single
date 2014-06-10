@@ -63,3 +63,5 @@ CASS_HEAP_NEWSIZE=200M
 
 # uncomment to use specific contrail bits instead of t-o-t
 # CONTRAIL_REPO=devstack.xml
+
+source /etc/contrail_bashrc || true

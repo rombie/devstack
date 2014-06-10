@@ -37,7 +37,7 @@ function install_contrail() {
 	apt_get install libvirt-bin
 
         if ! which redis-server > /dev/null 2>&1 ; then
-            sudo apt-get install libjemalloc1
+            apt_get -y install libjemalloc1
             wget http://us.archive.ubuntu.com/ubuntu/pool/universe/r/redis/redis-server_2.6.13-1_amd64.deb
             sudo dpkg -i redis-server_2.6.13-1_amd64.deb
             rm -rf redis-server_2.6.13-1_amd64.deb
@@ -45,30 +45,30 @@ function install_contrail() {
             sudo service redis-server stop
         fi
     else
-	sudo yum -y install patch scons flex bison make vim
-	sudo yum -y install expat-devel gettext-devel curl-devel
-	sudo yum -y install gcc-c++ python-devel autoconf automake libtool
-	sudo yum -y install libevent libevent-devel libxml2-devel libxslt-devel
-	sudo yum -y install tunctl
-	sudo yum -y install java-1.7.0-openjdk
-	sudo yum -y install libvirt-bin
+	yum_install patch scons flex bison make vim
+	yum_install expat-devel gettext-devel curl-devel
+	yum_install gcc-c++ python-devel autoconf automake libtool
+	yum_install libevent libevent-devel libxml2-devel libxslt-devel
+	yum_install tunctl
+	yum_install java-1.7.0-openjdk
+	yum_install libvirt-bin
 
         if ! which redis-server > /dev/null 2>&1 ; then
             wget http://mir01.syntis.net/atomic/fedora/17/x86_64/RPMS/redis-2.6.13-3.fc17.art.x86_64.rpm
-            sudo yum -y install redis-2.6.13-3.fc17.art.x86_64.rpm
+            yum_install redis-2.6.13-3.fc17.art.x86_64.rpm
             rm -rf redis-2.6.13-3.fc17.art.x86_64.rpm
         fi
     fi
 
     # api server requirements
-    # sudo pip install gevent==0.13.8 geventhttpclient==1.0a thrift==0.8.0
+    # pip_install gevent==0.13.8 geventhttpclient==1.0a thrift==0.8.0
     # sudo easy_install -U distribute
-    sudo pip install --upgrade setuptools
-    sudo pip install gevent geventhttpclient==1.0a thrift
-    sudo pip install netifaces fabric argparse
-    sudo pip install stevedore xmltodict python-keystoneclient
-    sudo pip install kazoo pyinotify
-    sudo pip install bottle
+    pip_install --upgrade setuptools
+    pip_install gevent geventhttpclient==1.0a thrift
+    pip_install netifaces fabric argparse
+    pip_install stevedore xmltodict python-keystoneclient
+    pip_install kazoo pyinotify
+    pip_install bottle
 
     CONTRAIL_REPO=${CONTRAIL_REPO:-default.xml}
     CONTRAIL_REPO_PROTO=${CONTRAIL_REPO_PROTO:-ssh}
@@ -98,12 +98,12 @@ function install_contrail() {
 
     # install contrail modules
     echo "Installing contrail modules"
-    sudo pip install --upgrade $(find $CONTRAIL_SRC/build/debug -name "*.tar.gz" -print)
+    pip_install --upgrade $(find $CONTRAIL_SRC/build/debug -name "*.tar.gz" -print)
 
     # install VIF driver
-    sudo pip install $CONTRAIL_SRC/build/noarch/nova_contrail_vif/dist/nova_contrail_vif*.tar.gz
+    pip_install $CONTRAIL_SRC/build/noarch/nova_contrail_vif/dist/nova_contrail_vif*.tar.gz
     # install Neutron OpenContrail plugin
-    sudo pip install -e $CONTRAIL_SRC/openstack/neutron_plugin/
+    pip_install -e $CONTRAIL_SRC/openstack/neutron_plugin/
 
     # get cassandra
     if ! which cassandra > /dev/null 2>&1 ; then
@@ -140,7 +140,7 @@ function install_contrail() {
             contrail_cwd=$(pwd)
             cd $CONTRAIL_SRC/third_party
             wget http://rpm.datastax.com/community/noarch/cassandra12-1.2.11-1.noarch.rpm
-            sudo yum -y install ./cassandra12-1.2.11-1.noarch.rpm
+            yum_install ./cassandra12-1.2.11-1.noarch.rpm
             cd ${contrail_cwd}
         fi
     fi
@@ -170,7 +170,7 @@ function install_contrail() {
         contrail_cwd=$(pwd)
         cd $CONTRAIL_SRC/third_party
         wget -N https://code.grnet.gr/attachments/download/1172/ncclient-v0.3.2.tar.gz
-        sudo pip install ncclient-v0.3.2.tar.gz
+        pip_install ncclient-v0.3.2.tar.gz
         cd ${contrail_cwd}
     fi
 
